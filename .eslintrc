@@ -1,27 +1,16 @@
 {
   "env": {
-    "node": true,
-    "browser": true,
-    "commonjs": true,
-    "es6": true,
+    "node": true
   },
   "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:@typescript-eslint/recommended-requiring-type-checking"
+    "@eslint-kit/base",
+    "@eslint-kit/typescript",
+    "@eslint-kit/prettier"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "project": "tsconfig.json",
     "createDefaultProgram": true,
     "tsconfigRootDir": "./"
-  },
-  "plugins": [
-    "@typescript-eslint"
-  ],
-  "rules": {
-    "import/extensions": "off",
-    "@typescript-eslint/explicit-function-return-type": "off"
   }
 }
