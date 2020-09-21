@@ -21,7 +21,7 @@ function getLoopSequence<GraphNode extends ValidActionName>(
   )
 }
 
-interface DfsCbParams<GraphNode extends ValidActionName, State> {
+interface DfsCallbackParams<GraphNode extends ValidActionName, State> {
   node: GraphNode
   state: State
   statuses: Map<GraphNode, DfsStatus>
@@ -38,8 +38,8 @@ export function dfs<GraphNode extends ValidActionName, State, Result>({
   nodes: GraphNode[]
   edgesOut: EdgesOut<GraphNode>
   state: State
-  onEnterNode?: (params: DfsCbParams<GraphNode, State>) => void
-  onLeaveNode?: (params: DfsCbParams<GraphNode, State>) => void
+  onEnterNode?: (params: DfsCallbackParams<GraphNode, State>) => void
+  onLeaveNode?: (params: DfsCallbackParams<GraphNode, State>) => void
   getResult: (state: State) => Result
 }): Result {
   const statuses: Map<GraphNode, DfsStatus> = new Map()
