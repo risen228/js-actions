@@ -1,4 +1,4 @@
-import { Actions, ValidActionName, WorkflowState } from '../types'
+import { Actions, ActionName, WorkflowState } from '../types'
 import { ActionStatus, WorkflowStatus, NodeStatus } from '../enums'
 import { buildDependencyGraph } from './build-dependency-graph'
 import {
@@ -8,7 +8,7 @@ import {
   getWorkflowNodes,
 } from './node-utils'
 
-function createMap<K extends ValidActionName, V extends unknown>(
+function createMap<K extends ActionName, V extends unknown>(
   object: Record<K, V>
 ): Map<K, V> {
   const map = new Map()
@@ -20,7 +20,7 @@ function createMap<K extends ValidActionName, V extends unknown>(
   return map
 }
 
-function createSet<V extends ValidActionName>(array: V[]): Set<V> {
+function createSet<V extends ActionName>(array: V[]): Set<V> {
   return new Set(array)
 }
 
@@ -550,10 +550,7 @@ describe('core', () => {
       })
 
       test('Workflow dependencies', () => {
-        const config = (
-          node: ValidActionName,
-          workflowState: WorkflowState
-        ) => ({
+        const config = (node: ActionName, workflowState: WorkflowState) => ({
           node,
           graph,
           resultMap: createMap({}),

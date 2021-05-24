@@ -1,9 +1,9 @@
 import { ActionStatus } from '../enums'
-import { ValidActionName } from '../types'
+import { ActionName } from '../types'
 import { topologySortRTL } from './topology-sort'
 import { EdgeType } from './types'
 
-const to = <GraphNode extends ValidActionName>(node: GraphNode) => ({
+const to = <GraphNode extends ActionName>(node: GraphNode) => ({
   to: node,
   meta: { type: EdgeType.AllIn, status: ActionStatus.Ok },
 })

@@ -1,4 +1,4 @@
-import { ValidActionName } from '../types'
+import { ActionName } from '../types'
 import { ActionStatus, WorkflowStatus } from '../enums'
 
 export enum EdgeType {
@@ -11,27 +11,27 @@ interface EdgeMeta<Status> {
   status: Status
 }
 
-interface EdgeIn<GraphNode extends ValidActionName> {
+interface EdgeIn<GraphNode extends ActionName> {
   from: GraphNode
   meta: EdgeMeta<ActionStatus>
 }
 
-export type EdgesIn<GraphNode extends ValidActionName> = Record<
+export type EdgesIn<GraphNode extends ActionName> = Record<
   GraphNode,
   EdgeIn<GraphNode>[]
 >
 
-interface EdgeOut<GraphNode extends ValidActionName> {
+interface EdgeOut<GraphNode extends ActionName> {
   to: GraphNode
   meta: EdgeMeta<ActionStatus>
 }
 
-export type EdgesOut<GraphNode extends ValidActionName> = Record<
+export type EdgesOut<GraphNode extends ActionName> = Record<
   GraphNode,
   EdgeOut<GraphNode>[]
 >
 
-export interface DependencyGraph<GraphNode extends ValidActionName> {
+export interface DependencyGraph<GraphNode extends ActionName> {
   nodes: GraphNode[]
   edgesIn: EdgesIn<GraphNode>
   edgesOut: EdgesOut<GraphNode>

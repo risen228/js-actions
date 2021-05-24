@@ -15,9 +15,9 @@ export class BaseError extends Error {
 }
 
 export class CycleError<
-  GraphNode extends string | number | symbol
+  TGraphNode extends string | number | symbol
 > extends BaseError {
-  constructor(loopSequence: GraphNode[]) {
+  constructor(loopSequence: TGraphNode[]) {
     const sequenceString = loopSequence.map(String).join(' -> ')
 
     super(

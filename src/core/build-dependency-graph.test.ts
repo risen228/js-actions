@@ -1,4 +1,4 @@
-import { Actions, ValidActionName } from '../types'
+import { Actions, ActionName } from '../types'
 import { ActionStatus, WorkflowStatus } from '../enums'
 import {
   buildDependencyGraph,
@@ -6,7 +6,7 @@ import {
 } from './build-dependency-graph'
 import { EdgeType } from './types'
 
-function createMap<K extends ValidActionName, V extends unknown>(
+function createMap<K extends ActionName, V extends unknown>(
   object: Record<K, V>
 ): Map<K, V> {
   const map = new Map()
@@ -18,7 +18,7 @@ function createMap<K extends ValidActionName, V extends unknown>(
   return map
 }
 
-function createSet<V extends ValidActionName>(array: V[]): Set<V> {
+function createSet<V extends ActionName>(array: V[]): Set<V> {
   return new Set(array)
 }
 

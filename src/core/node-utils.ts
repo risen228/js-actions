@@ -1,10 +1,10 @@
-import { ValidActionName, WorkflowState } from '../types'
+import { ActionName, WorkflowState } from '../types'
 import { ActionStatus, NodeStatus, WorkflowStatus } from '../enums'
 import { DependencyGraph, EdgeType } from './types'
 
-export function getIndependentNodes<ActionName extends ValidActionName>(
-  graph: DependencyGraph<ActionName>
-): ActionName[] {
+export function getIndependentNodes<TActionName extends ActionName>(
+  graph: DependencyGraph<TActionName>
+): TActionName[] {
   return graph.nodes.filter((node) => {
     const edgesIn = graph.edgesIn[node]
     if (edgesIn.length > 0) return false
@@ -14,30 +14,31 @@ export function getIndependentNodes<ActionName extends ValidActionName>(
   })
 }
 
-export function getWorkflowNodes<ActionName extends ValidActionName>(
-  graph: DependencyGraph<ActionName>
-): ActionName[] {
+export function getWorkflowNodes<TActionName extends ActionName>(
+  graph: DependencyGraph<TActionName>
+): TActionName[] {
   return Array.from(graph.nodesDependsOnWorkflow)
 }
 
-export function getNextNodes<ActionName extends ValidActionName>(
-  node: ActionName,
-  graph: DependencyGraph<ActionName>
-): ActionName[] {
+export function getNextNodes<TActionName extends ActionName>(
+  node: TActionName,
+  graph: DependencyGraph<TActionName>
+): TActionName[] {
   return graph.edgesOut[node].map((edge) => edge.to)
 }
 
-export function getNodeStatus<ActionName extends ValidActionName>({
+// eslint-disable-next-line sonarjs/cognitive-complexity
+export function getNodeStatus<TActionName extends ActionName>({
   node,
   graph,
   resultMap,
   runSet,
   workflowState,
 }: {
-  node: ActionName
-  graph: DependencyGraph<ActionName>
-  resultMap: Map<ActionName, ActionStatus>
-  runSet: Set<ActionName>
+  node: TActionName
+  graph: DependencyGraph<TActionName>
+  resultMap: Map<TActionName, ActionStatus>
+  runSet: Set<TActionName>
   workflowState: WorkflowState
 }): NodeStatus {
   const allStats = {

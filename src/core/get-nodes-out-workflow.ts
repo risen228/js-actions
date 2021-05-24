@@ -1,4 +1,4 @@
-import { ValidActionName } from '../types'
+import { ActionName } from '../types'
 import { dfs } from './dfs'
 import { EdgesOut } from './types'
 
@@ -8,11 +8,11 @@ interface State<GraphNode> {
   upperNodeOutWorkflow: GraphNode | null
 }
 
-export function getNodesOutWorkflow<GraphNode extends ValidActionName>(
+export function getNodesOutWorkflow<TGraphNode extends ActionName>(
   // requires RTL-sorted nodes (parents should be at the end of the stack)
-  nodes: GraphNode[],
-  edgesOut: EdgesOut<GraphNode>,
-  nodesDependsOnWorkflow: Set<GraphNode>
+  nodes: TGraphNode[],
+  edgesOut: EdgesOut<TGraphNode>,
+  nodesDependsOnWorkflow: Set<TGraphNode>
 ) {
   return dfs({
     nodes,
@@ -21,7 +21,7 @@ export function getNodesOutWorkflow<GraphNode extends ValidActionName>(
       nodesOutWorkflow: new Set(),
       isOutWorkflow: false,
       upperNodeOutWorkflow: null,
-    } as State<GraphNode>,
+    } as State<TGraphNode>,
     onEnterNode: ({ node, state }) => {
       if (!state.isOutWorkflow && nodesDependsOnWorkflow.has(node)) {
         state.isOutWorkflow = true

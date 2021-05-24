@@ -1,11 +1,11 @@
 import { runPipeline } from './run-pipeline'
-import { ValidActionName } from './types'
+import { ActionName } from './types'
 import { ActionStatus, WorkflowStatus } from './enums'
 
-let callSequence: ValidActionName[] = []
+let callSequence: ActionName[] = []
 
 function fn(
-  actionName: ValidActionName,
+  actionName: ActionName,
   status: ActionStatus | WorkflowStatus = ActionStatus.Ok
 ) {
   return () => {
@@ -15,7 +15,7 @@ function fn(
 }
 
 function asyncFn(
-  actionName: ValidActionName,
+  actionName: ActionName,
   ms: number,
   status: ActionStatus | WorkflowStatus = ActionStatus.Ok
 ) {
@@ -28,11 +28,11 @@ function asyncFn(
     }) as Promise<ActionStatus> | Promise<WorkflowStatus>
 }
 
-function order(nodeA: ValidActionName, nodeB: ValidActionName) {
+function order(nodeA: ActionName, nodeB: ActionName) {
   expect(callSequence.indexOf(nodeA)).toBeLessThan(callSequence.indexOf(nodeB))
 }
 
-function orderSome(nodes: ValidActionName[], nodeB: ValidActionName) {
+function orderSome(nodes: ActionName[], nodeB: ActionName) {
   expect(
     nodes
       .map((node) => callSequence.indexOf(node))
@@ -40,7 +40,7 @@ function orderSome(nodes: ValidActionName[], nodeB: ValidActionName) {
   ).toBe(true)
 }
 
-function orderEvery(nodes: ValidActionName[], nodeB: ValidActionName) {
+function orderEvery(nodes: ActionName[], nodeB: ActionName) {
   expect(
     nodes
       .map((node) => callSequence.indexOf(node))

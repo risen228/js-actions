@@ -1,10 +1,10 @@
 import { ActionStatus } from '../enums'
-import { ValidActionName } from '../types'
+import { ActionName } from '../types'
 import { CycleError } from '../util/errors'
 import { dfs } from './dfs'
 import { EdgeType } from './types'
 
-const to = <GraphNode extends ValidActionName>(node: GraphNode) => ({
+const to = <GraphNode extends ActionName>(node: GraphNode) => ({
   to: node,
   meta: { type: EdgeType.AllIn, status: ActionStatus.Ok },
 })
@@ -27,8 +27,8 @@ describe('core', () => {
           8: [to(7)],
         },
         state: {
-          enterSequence: [] as ValidActionName[],
-          leaveSequence: [] as ValidActionName[],
+          enterSequence: [] as ActionName[],
+          leaveSequence: [] as ActionName[],
         },
         onEnterNode: ({ node, state }) => state.enterSequence.push(node),
         onLeaveNode: ({ node, state }) => state.leaveSequence.push(node),

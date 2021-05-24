@@ -1,26 +1,26 @@
 import { ActionStatus, WorkflowStatus } from './enums'
 
-export type ValidActionName = string | number | symbol
+export type ActionName = string | number | symbol
 
-export interface ObjectDependency<SingleActionName = ValidActionName> {
-  action: SingleActionName
+export interface ObjectDependency<TActionName = ActionName> {
+  action: TActionName
   with: ActionStatus
 }
 
-export type Dependency<SingleActionName = ValidActionName> =
-  | SingleActionName
-  | ObjectDependency<SingleActionName>
+export type Dependency<TActionName = ActionName> =
+  | TActionName
+  | ObjectDependency<TActionName>
 
 export interface Action<
-  SingleActionName extends ValidActionName,
-  ActionName extends ValidActionName,
-  ActionFinalData = unknown
+  TActionName extends ActionName,
+  TAllActionName extends ActionName,
+  TActionFinalData = unknown
 > {
-  needs?: Dependency<Exclude<ActionName, SingleActionName>>[]
-  needsAnyOf?: Dependency<Exclude<ActionName, SingleActionName>>[]
+  needs?: Dependency<Exclude<TAllActionName, TActionName>>[]
+  needsAnyOf?: Dependency<Exclude<TAllActionName, TActionName>>[]
   needsWorkflow?: WorkflowStatus
   run: (
-    data: ActionFinalData
+    data: TActionFinalData
   ) =>
     | void
     | ActionStatus
@@ -30,10 +30,10 @@ export interface Action<
     | Promise<WorkflowStatus>
 }
 
-export type Actions<ActionName extends ValidActionName, FinalData = unknown> = {
-  [SingleActionName in ActionName]: Action<
+export type Actions<TActionName extends ActionName, FinalData = unknown> = {
+  [SingleActionName in TActionName]: Action<
     SingleActionName,
-    ActionName,
+    TActionName,
     FinalData
   >
 }

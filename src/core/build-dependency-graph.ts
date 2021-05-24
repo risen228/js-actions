@@ -1,23 +1,18 @@
-import {
-  ValidActionName,
-  Actions,
-  Dependency,
-  ObjectDependency,
-} from '../types'
+import { ActionName, Actions, Dependency, ObjectDependency } from '../types'
 import { WorkflowStatus, ActionStatus } from '../enums'
 import { DependencyGraph, EdgesIn, EdgesOut, EdgeType } from './types'
 import { topologySortRTL } from './topology-sort'
 import { getNodesOutWorkflow } from './get-nodes-out-workflow'
 
-export function normalizeActionName<ActionName extends ValidActionName>(
-  actionName: ActionName
-): ActionName {
-  return String(actionName) as ActionName
+export function normalizeActionName<TActionName extends ActionName>(
+  actionName: TActionName
+): TActionName {
+  return String(actionName) as TActionName
 }
 
-function normalizeDependency<ActionName extends ValidActionName>(
-  dependency: Dependency<ActionName>
-): ObjectDependency<ActionName> {
+function normalizeDependency<TActionName extends ActionName>(
+  dependency: Dependency<TActionName>
+): ObjectDependency<TActionName> {
   if (typeof dependency === 'object') {
     return {
       action: normalizeActionName(dependency.action),
@@ -31,11 +26,11 @@ function normalizeDependency<ActionName extends ValidActionName>(
   }
 }
 
-type DependencyProcessor = <ActionName extends ValidActionName>(
-  actionName: ActionName,
-  dependencies: Dependency<ActionName>[],
-  edgesIn: EdgesIn<ActionName>,
-  edgesOut: EdgesOut<ActionName>
+type DependencyProcessor = <TActionName extends ActionName>(
+  actionName: TActionName,
+  dependencies: Dependency<TActionName>[],
+  edgesIn: EdgesIn<TActionName>,
+  edgesOut: EdgesOut<TActionName>
 ) => void
 
 export function createDependencyProcessor(
@@ -67,21 +62,23 @@ const processAllInDependencies = createDependencyProcessor(EdgeType.AllIn)
 const processAnyOfDependencies = createDependencyProcessor(EdgeType.AnyOf)
 
 export function buildDependencyGraph<
-  ActionName extends ValidActionName,
-  ActionFinalData = unknown
->(actions: Actions<ActionName, ActionFinalData>): DependencyGraph<ActionName> {
-  const actionNames = Object.keys(actions) as ActionName[]
+  TActionName extends ActionName,
+  TActionFinalData = unknown
+>(
+  actions: Actions<TActionName, TActionFinalData>
+): DependencyGraph<TActionName> {
+  const actionNames = Object.keys(actions) as TActionName[]
 
   const nodes = actionNames
 
-  const edgesIn = {} as EdgesIn<ActionName>
+  const edgesIn = {} as EdgesIn<TActionName>
   for (const node of nodes) edgesIn[node] = []
 
-  const edgesOut = {} as EdgesOut<ActionName>
+  const edgesOut = {} as EdgesOut<TActionName>
   for (const node of nodes) edgesOut[node] = []
 
-  const nodesDependsOnWorkflow: Set<ActionName> = new Set()
-  const workflowStatusesByNode: Map<ActionName, WorkflowStatus> = new Map()
+  const nodesDependsOnWorkflow: Set<TActionName> = new Set()
+  const workflowStatusesByNode: Map<TActionName, WorkflowStatus> = new Map()
 
   for (const actionName in actions) {
     const { needs = [], needsAnyOf = [], needsWorkflow } = actions[actionName]

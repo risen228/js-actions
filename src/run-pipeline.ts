@@ -1,4 +1,4 @@
-import { ValidActionName, Actions, WorkflowState } from './types'
+import { ActionName, Actions, WorkflowState } from './types'
 import { Logs } from './util/errors'
 import {
   ActionStatus,
@@ -45,27 +45,28 @@ function normalizeActionResult(
   return result
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export async function runPipeline<
-  ActionsConfig extends Record<ValidActionName, unknown>,
-  WorkflowData,
-  ActionData,
-  ActionName extends keyof ActionsConfig
+  TActionsConfig extends Record<ActionName, unknown>,
+  TWorkflowData,
+  TActionData,
+  TActionName extends keyof TActionsConfig
 >({
   actions,
-  getWorkflowData = () => ({} as WorkflowData),
-  getActionData = () => ({} as ActionData),
+  getWorkflowData = () => ({} as TWorkflowData),
+  getActionData = () => ({} as TActionData),
 }: {
-  actions: Actions<ActionName, WorkflowData & ActionData>
-  getWorkflowData?: () => WorkflowData | Promise<WorkflowData>
-  getActionData?: () => ActionData | Promise<ActionData>
+  actions: Actions<TActionName, TWorkflowData & TActionData>
+  getWorkflowData?: () => TWorkflowData | Promise<TWorkflowData>
+  getActionData?: () => TActionData | Promise<TActionData>
 }): Promise<void> {
   const dependencyGraph = buildDependencyGraph(actions)
 
   let queueDefer = createDefer()
-  const actionQueue: ActionName[] = []
+  const actionQueue: TActionName[] = []
 
-  const actionResultMap: Map<ActionName, ActionStatus> = new Map()
-  const runningActionsSet: Set<ActionName> = new Set()
+  const actionResultMap: Map<TActionName, ActionStatus> = new Map()
+  const runningActionsSet: Set<TActionName> = new Set()
 
   const workflowState: WorkflowState = {
     isFinished: false,
@@ -101,7 +102,7 @@ export async function runPipeline<
     actionQueue.push(...workflowActions)
   }
 
-  const runAction = async (actionName: ActionName) => {
+  const runAction = async (actionName: TActionName) => {
     const status = getNodeStatus({
       node: actionName,
       graph: dependencyGraph,
@@ -134,7 +135,7 @@ export async function runPipeline<
         ...actionData,
       }
 
-      const action = actions[actionName as ActionName]
+      const action = actions[actionName as TActionName]
 
       const result = await Promise.resolve()
         .then(() => action.run(actionFinalData))

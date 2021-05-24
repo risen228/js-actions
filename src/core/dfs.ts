@@ -1,5 +1,5 @@
 import { CycleError } from '../util/errors'
-import { ValidActionName } from '../types'
+import { ActionName } from '../types'
 import { EdgesOut } from './types'
 
 enum DfsStatus {
@@ -8,10 +8,10 @@ enum DfsStatus {
   Checked,
 }
 
-function getLoopSequence<GraphNode extends ValidActionName>(
-  nodes: GraphNode[],
-  dfsStatuses: Map<GraphNode, DfsStatus>
-): GraphNode[] {
+function getLoopSequence<TGraphNode extends ActionName>(
+  nodes: TGraphNode[],
+  dfsStatuses: Map<TGraphNode, DfsStatus>
+): TGraphNode[] {
   return Array.from(
     new Set(
       nodes.filter((node) => {
@@ -21,13 +21,13 @@ function getLoopSequence<GraphNode extends ValidActionName>(
   )
 }
 
-interface DfsCallbackParams<GraphNode extends ValidActionName, State> {
-  node: GraphNode
+interface DfsCallbackParams<TGraphNode extends ActionName, State> {
+  node: TGraphNode
   state: State
-  statuses: Map<GraphNode, DfsStatus>
+  statuses: Map<TGraphNode, DfsStatus>
 }
 
-export function dfs<GraphNode extends ValidActionName, State, Result>({
+export function dfs<TGraphNode extends ActionName, TState, TResult>({
   nodes,
   edgesOut,
   state,
@@ -35,14 +35,14 @@ export function dfs<GraphNode extends ValidActionName, State, Result>({
   onLeaveNode = () => {},
   getResult,
 }: {
-  nodes: GraphNode[]
-  edgesOut: EdgesOut<GraphNode>
-  state: State
-  onEnterNode?: (params: DfsCallbackParams<GraphNode, State>) => void
-  onLeaveNode?: (params: DfsCallbackParams<GraphNode, State>) => void
-  getResult: (state: State) => Result
-}): Result {
-  const statuses: Map<GraphNode, DfsStatus> = new Map()
+  nodes: TGraphNode[]
+  edgesOut: EdgesOut<TGraphNode>
+  state: TState
+  onEnterNode?: (params: DfsCallbackParams<TGraphNode, TState>) => void
+  onLeaveNode?: (params: DfsCallbackParams<TGraphNode, TState>) => void
+  getResult: (state: TState) => TResult
+}): TResult {
+  const statuses: Map<TGraphNode, DfsStatus> = new Map()
   for (const node of nodes) statuses.set(node, DfsStatus.NotChecked)
 
   const stack = [...nodes]

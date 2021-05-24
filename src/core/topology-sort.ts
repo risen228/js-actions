@@ -1,22 +1,22 @@
-import { ValidActionName } from '../types'
+import { ActionName } from '../types'
 import { dfs } from './dfs'
 import { EdgesOut } from './types'
 
-interface State<GraphNode> {
-  sortedNodes: GraphNode[]
+interface State<TGraphNode> {
+  sortedNodes: TGraphNode[]
 }
 
 // RTL = right to left
-export function topologySortRTL<GraphNode extends ValidActionName>(
-  nodes: GraphNode[],
-  edgesOut: EdgesOut<GraphNode>
+export function topologySortRTL<TGraphNode extends ActionName>(
+  nodes: TGraphNode[],
+  edgesOut: EdgesOut<TGraphNode>
 ) {
   return dfs({
     nodes,
     edgesOut,
     state: {
       sortedNodes: [],
-    } as State<GraphNode>,
+    } as State<TGraphNode>,
     onLeaveNode: ({ node, state }) => state.sortedNodes.push(node),
     getResult: (state) => state.sortedNodes,
   })
