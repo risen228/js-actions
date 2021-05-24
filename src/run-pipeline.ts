@@ -1,12 +1,13 @@
-import { ActionName, Actions, WorkflowState } from './types'
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/consistent-type-definitions */
+import { Actions, ReturnTypes, WorkflowState } from './types'
 import { Logs } from './util/errors'
 import {
   ActionStatus,
   WorkflowStatus,
   NodeStatus,
-  isWorkflowStatus,
-  isActionStatus,
   getActionStatusFromWorkflowStatus,
+  isWorkflowStatus,
 } from './enums'
 import { buildDependencyGraph } from './core/build-dependency-graph'
 import { createDefer } from './util/defer'
@@ -17,12 +18,8 @@ import {
   getNodeStatus,
 } from './core/node-utils'
 
-function normalizeActionResult(
-  result: void | ActionStatus | WorkflowStatus
-): ActionStatus | WorkflowStatus {
-  if (!result) return ActionStatus.Ok
-
-  if (result === ActionStatus.Any) {
+function normalizeActionStatus(status: ActionStatus): ActionStatus {
+  if (status === ActionStatus.Any) {
     Logs.error(
       'Please do not use ActionStatus.Any in action runners.',
       'It is designed to use only in dependency arrays.',
@@ -32,7 +29,11 @@ function normalizeActionResult(
     return ActionStatus.Ok
   }
 
-  if (result === WorkflowStatus.Any) {
+  return status
+}
+
+function normalizeWorkflowStatus(status: WorkflowStatus): WorkflowStatus {
+  if (status === WorkflowStatus.Any) {
     Logs.error(
       'Please do not use WorkflowStatus.Any in action runners.',
       'It is designed to use only in dependency arrays.',
@@ -42,41 +43,90 @@ function normalizeActionResult(
     return WorkflowStatus.Ok
   }
 
-  return result
+  return status
+}
+
+function createTemporaryStatus() {
+  let temp: ActionStatus | WorkflowStatus | null = null
+
+  const set = (status: ActionStatus | WorkflowStatus) => {
+    temp = status
+  }
+
+  interface ExtractionResult {
+    action: ActionStatus
+    workflow: WorkflowStatus | null
+  }
+
+  const extract = (): ExtractionResult => {
+    if (!temp) {
+      temp = ActionStatus.Ok
+    }
+
+    temp = isWorkflowStatus(temp)
+      ? normalizeWorkflowStatus(temp)
+      : normalizeActionStatus(temp)
+
+    const actionStatus = isWorkflowStatus(temp)
+      ? getActionStatusFromWorkflowStatus(temp)
+      : temp
+
+    const workflowStatus = isWorkflowStatus(temp) ? temp : null
+
+    return {
+      action: actionStatus,
+      workflow: workflowStatus,
+    }
+  }
+
+  return {
+    set,
+    extract,
+  }
+}
+
+type ResolvedDeps<TReturnTypes extends ReturnTypes> = {
+  [ActionName in keyof TReturnTypes]: TReturnTypes[ActionName]
+}
+
+function createResolvedDeps<TReturnTypes extends ReturnTypes>(
+  actions: Actions<TReturnTypes>
+): ResolvedDeps<TReturnTypes> {
+  type Result = ResolvedDeps<TReturnTypes>
+
+  const resolvedDeps: Partial<Result> = {}
+
+  for (const actionName in actions) {
+    type ActionResult = TReturnTypes[typeof actionName]
+    // is safe because ResolvedDeps cannot be used before resolving
+    resolvedDeps[actionName] = null as ActionResult
+  }
+
+  return resolvedDeps as Result
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
-export async function runPipeline<
-  TActionsConfig extends Record<ActionName, unknown>,
-  TWorkflowData,
-  TActionData,
-  TActionName extends keyof TActionsConfig
->({
-  actions,
-  getWorkflowData = () => ({} as TWorkflowData),
-  getActionData = () => ({} as TActionData),
-}: {
-  actions: Actions<TActionName, TWorkflowData & TActionData>
-  getWorkflowData?: () => TWorkflowData | Promise<TWorkflowData>
-  getActionData?: () => TActionData | Promise<TActionData>
-}): Promise<void> {
+export async function runPipeline<TReturnTypes extends ReturnTypes>(
+  actions: Actions<TReturnTypes>
+): Promise<void> {
+  type ActionName = keyof TReturnTypes
+
   const dependencyGraph = buildDependencyGraph(actions)
+  const resolvedDeps = createResolvedDeps(actions)
 
   let queueDefer = createDefer()
-  const actionQueue: TActionName[] = []
+  const actionQueue: ActionName[] = []
 
-  const actionResultMap: Map<TActionName, ActionStatus> = new Map()
-  const runningActionsSet: Set<TActionName> = new Set()
+  const statusMap: Map<ActionName, ActionStatus> = new Map()
+  const runningSet: Set<ActionName> = new Set()
 
   const workflowState: WorkflowState = {
     isFinished: false,
     status: WorkflowStatus.Ok,
   }
 
-  const workflowData = await getWorkflowData()
-
   const checkQueue = () => {
-    if (actionQueue.length > 0 || runningActionsSet.size === 0) {
+    if (actionQueue.length > 0 || runningSet.size === 0) {
       queueDefer.resolve()
       queueDefer = createDefer()
     }
@@ -92,9 +142,9 @@ export async function runPipeline<
     // skip remaining nodes in workflow
     for (const node of dependencyGraph.nodes) {
       if (dependencyGraph.nodesOutWorkflow.has(node)) continue
-      if (actionResultMap.has(node)) continue
-      if (runningActionsSet.has(node)) continue
-      actionResultMap.set(node, ActionStatus.Skip)
+      if (statusMap.has(node)) continue
+      if (runningSet.has(node)) continue
+      statusMap.set(node, ActionStatus.Skip)
     }
 
     // run workflow-dependent nodes
@@ -102,58 +152,58 @@ export async function runPipeline<
     actionQueue.push(...workflowActions)
   }
 
-  const runAction = async (actionName: TActionName) => {
-    const status = getNodeStatus({
+  const runAction = async (actionName: ActionName) => {
+    const nodeStatus = getNodeStatus({
       node: actionName,
       graph: dependencyGraph,
-      resultMap: actionResultMap,
-      runSet: runningActionsSet,
+      resultMap: statusMap,
+      runSet: runningSet,
       workflowState,
     })
 
     if (
-      status === NodeStatus.Running ||
-      status === NodeStatus.Finished ||
-      status === NodeStatus.NotReady
+      nodeStatus === NodeStatus.Running ||
+      nodeStatus === NodeStatus.Finished ||
+      nodeStatus === NodeStatus.NotReady
     ) {
       // we may not check next nodes with these statuses
       return
     }
 
-    if (status === NodeStatus.Skipped) {
-      actionResultMap.set(actionName, ActionStatus.Skip)
+    const action = actions[actionName]
+
+    const temporaryStatus = createTemporaryStatus()
+
+    if (nodeStatus === NodeStatus.Skipped) {
+      temporaryStatus.set(ActionStatus.Skip)
     }
 
-    if (status === NodeStatus.Ready) {
+    if (nodeStatus === NodeStatus.Ready) {
       // we should do it before any async code
-      runningActionsSet.add(actionName)
+      runningSet.add(actionName)
 
-      const actionData = await getActionData()
-
-      const actionFinalData = {
-        ...workflowData,
-        ...actionData,
+      const actionActions = {
+        setStatus: temporaryStatus.set,
       }
 
-      const action = actions[actionName as TActionName]
+      try {
+        const result = await Promise.resolve().then(() => {
+          return action.run(resolvedDeps, actionActions)
+        })
 
-      const result = await Promise.resolve()
-        .then(() => action.run(actionFinalData))
-        .then(normalizeActionResult)
-        .catch(() => ActionStatus.Fail)
-
-      runningActionsSet.delete(actionName)
-
-      if (isWorkflowStatus(result)) {
-        const actionStatus = getActionStatusFromWorkflowStatus(result)
-        actionResultMap.set(actionName, actionStatus)
-
-        finishWorkflow(result)
+        resolvedDeps[actionName] = result
+      } catch (error) {
+        resolvedDeps[actionName] = error
       }
 
-      if (isActionStatus(result)) {
-        actionResultMap.set(actionName, result)
-      }
+      runningSet.delete(actionName)
+    }
+
+    const statuses = temporaryStatus.extract()
+    statusMap.set(actionName, statuses.action)
+
+    if (statuses.workflow) {
+      finishWorkflow(statuses.workflow)
     }
 
     const nextActions = getNextNodes(actionName, dependencyGraph)
@@ -166,7 +216,7 @@ export async function runPipeline<
   const independentActions = getIndependentNodes(dependencyGraph)
   actionQueue.push(...independentActions)
 
-  while (actionResultMap.size !== dependencyGraph.nodes.length) {
+  while (statusMap.size !== dependencyGraph.nodes.length) {
     if (actionQueue.length === 0) {
       await queueDefer.promise
     }
@@ -176,7 +226,7 @@ export async function runPipeline<
      * but if currently running actions count is 0, we'll never get new actions in queue
      * the only case when this possible is the workflow end
      */
-    if (actionQueue.length === 0 && runningActionsSet.size === 0) {
+    if (actionQueue.length === 0 && runningSet.size === 0) {
       finishWorkflow(WorkflowStatus.Ok)
       continue
     }

@@ -122,32 +122,39 @@ describe('core', () => {
     })
 
     test('basic cases', () => {
-      const actions: Actions<1 | 2 | 3 | 4 | 5 | 6> = {
-        1: {
+      const actions: Actions<{
+        '1': void
+        '2': void
+        '3': void
+        '4': void
+        '5': void
+        '6': void
+      }> = {
+        '1': {
           run: () => {},
         },
-        2: {
-          needs: [1],
+        '2': {
+          needs: ['1'],
           run: () => {},
         },
-        3: {
+        '3': {
           needs: [
-            { action: 1, with: ActionStatus.Ok },
-            { action: 2, with: ActionStatus.Fail },
+            { action: '1', with: ActionStatus.Ok },
+            { action: '2', with: ActionStatus.Fail },
           ],
           run: () => {},
         },
-        4: {
-          needs: [1],
-          needsAnyOf: [2, { action: 3, with: ActionStatus.Fail }],
+        '4': {
+          needs: ['1'],
+          needsAnyOf: ['2', { action: '3', with: ActionStatus.Fail }],
           run: () => {},
         },
-        5: {
+        '5': {
           needsWorkflow: WorkflowStatus.Fail,
           run: () => {},
         },
-        6: {
-          needs: [5],
+        '6': {
+          needs: ['5'],
           run: () => {},
         },
       }

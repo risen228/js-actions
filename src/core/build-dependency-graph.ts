@@ -1,4 +1,10 @@
-import { ActionName, Actions, Dependency, ObjectDependency } from '../types'
+import {
+  ActionName,
+  Actions,
+  Dependency,
+  ObjectDependency,
+  ReturnTypes,
+} from '../types'
 import { WorkflowStatus, ActionStatus } from '../enums'
 import { DependencyGraph, EdgesIn, EdgesOut, EdgeType } from './types'
 import { topologySortRTL } from './topology-sort'
@@ -61,29 +67,34 @@ export function createDependencyProcessor(
 const processAllInDependencies = createDependencyProcessor(EdgeType.AllIn)
 const processAnyOfDependencies = createDependencyProcessor(EdgeType.AnyOf)
 
-export function buildDependencyGraph<
-  TActionName extends ActionName,
-  TActionFinalData = unknown
->(
-  actions: Actions<TActionName, TActionFinalData>
-): DependencyGraph<TActionName> {
-  const actionNames = Object.keys(actions) as TActionName[]
+export function buildDependencyGraph<TReturnTypes extends ReturnTypes>(
+  actions: Actions<TReturnTypes>
+): DependencyGraph<keyof TReturnTypes> {
+  type ActionName = keyof TReturnTypes
+
+  const actionNames = Object.keys(actions) as ActionName[]
 
   const nodes = actionNames
 
-  const edgesIn = {} as EdgesIn<TActionName>
+  const edgesIn = {} as EdgesIn<ActionName>
   for (const node of nodes) edgesIn[node] = []
 
-  const edgesOut = {} as EdgesOut<TActionName>
+  const edgesOut = {} as EdgesOut<ActionName>
   for (const node of nodes) edgesOut[node] = []
 
-  const nodesDependsOnWorkflow: Set<TActionName> = new Set()
-  const workflowStatusesByNode: Map<TActionName, WorkflowStatus> = new Map()
+  const nodesDependsOnWorkflow: Set<ActionName> = new Set()
+  const workflowStatusesByNode: Map<ActionName, WorkflowStatus> = new Map()
 
   for (const actionName in actions) {
-    const { needs = [], needsAnyOf = [], needsWorkflow } = actions[actionName]
+    const {
+      deps = [],
+      needs = [],
+      needsAnyOf = [],
+      needsWorkflow,
+    } = actions[actionName]
 
     processAllInDependencies(actionName, needs, edgesIn, edgesOut)
+    processAllInDependencies(actionName, deps, edgesIn, edgesOut)
     processAnyOfDependencies(actionName, needsAnyOf, edgesIn, edgesOut)
 
     if (needsWorkflow) {

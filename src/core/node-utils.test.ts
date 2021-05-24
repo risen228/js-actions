@@ -28,11 +28,14 @@ describe('core', () => {
   describe('node utils', () => {
     describe('getIndependentNodes', () => {
       test('no relations', () => {
-        const actions: Actions<1 | 2> = {
-          1: {
+        const actions: Actions<{
+          '1': void
+          '2': void
+        }> = {
+          '1': {
             run: () => {},
           },
-          2: {
+          '2': {
             run: () => {},
           },
         }
@@ -43,27 +46,34 @@ describe('core', () => {
       })
 
       test('some relations', () => {
-        const actions: Actions<1 | 2 | 3 | 4 | 5 | 6> = {
-          1: {
+        const actions: Actions<{
+          '1': void
+          '2': void
+          '3': void
+          '4': void
+          '5': void
+          '6': void
+        }> = {
+          '1': {
             run: () => {},
           },
-          2: {
-            needs: [1],
+          '2': {
+            needs: ['1'],
             run: () => {},
           },
-          3: {
+          '3': {
             run: () => {},
           },
-          4: {
-            needsAnyOf: [3],
+          '4': {
+            needsAnyOf: ['3'],
             run: () => {},
           },
-          5: {
+          '5': {
             needsWorkflow: WorkflowStatus.Ok,
             run: () => {},
           },
-          6: {
-            needs: [3],
+          '6': {
+            needs: ['3'],
             run: () => {},
           },
         }
@@ -76,29 +86,36 @@ describe('core', () => {
 
     describe('getWorkflowNodes', () => {
       test('basic', () => {
-        const actions: Actions<1 | 2 | 3 | 4 | 5 | 6> = {
-          1: {
+        const actions: Actions<{
+          '1': void
+          '2': void
+          '3': void
+          '4': void
+          '5': void
+          '6': void
+        }> = {
+          '1': {
             run: () => {},
           },
-          2: {
-            needs: [1],
+          '2': {
+            needs: ['1'],
             run: () => {},
           },
-          3: {
+          '3': {
             needsWorkflow: WorkflowStatus.Any,
             run: () => {},
           },
-          4: {
-            needsAnyOf: [3],
+          '4': {
+            needsAnyOf: ['3'],
             run: () => {},
           },
-          5: {
+          '5': {
             needsWorkflow: WorkflowStatus.Ok,
             run: () => {},
           },
-          6: {
-            needs: [3],
-            needsAnyOf: [5],
+          '6': {
+            needs: ['3'],
+            needsAnyOf: ['5'],
             run: () => {},
           },
         }
@@ -111,58 +128,72 @@ describe('core', () => {
 
     describe('getNextNodes', () => {
       test('basic', () => {
-        const actions: Actions<1 | 2 | 3 | 4> = {
-          1: {
+        const actions: Actions<{
+          '1': void
+          '2': void
+          '3': void
+          '4': void
+        }> = {
+          '1': {
             run: () => {},
           },
-          2: {
-            needs: [1],
+          '2': {
+            needs: ['1'],
             run: () => {},
           },
-          3: {
-            needs: [1],
+          '3': {
+            needs: ['1'],
             run: () => {},
           },
-          4: {
-            needsAnyOf: [3],
+          '4': {
+            needsAnyOf: ['3'],
             run: () => {},
           },
         }
 
         const graph = buildDependencyGraph(actions)
 
-        expect(getNextNodes(1, graph)).toEqualNoOrder(['2', '3'])
-        expect(getNextNodes(2, graph)).toEqualNoOrder([])
-        expect(getNextNodes(3, graph)).toEqualNoOrder(['4'])
-        expect(getNextNodes(4, graph)).toEqualNoOrder([])
+        expect(getNextNodes('1', graph)).toEqualNoOrder(['2', '3'])
+        expect(getNextNodes('2', graph)).toEqualNoOrder([])
+        expect(getNextNodes('3', graph)).toEqualNoOrder(['4'])
+        expect(getNextNodes('4', graph)).toEqualNoOrder([])
       })
     })
 
     describe('getNodeStatus', () => {
       // we can't use numbers here because names aren't normalized
 
-      const actions: Actions<
-        '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10'
-      > = {
-        1: {
+      const actions: Actions<{
+        '1': void
+        '2': void
+        '3': void
+        '4': void
+        '5': void
+        '6': void
+        '7': void
+        '8': void
+        '9': void
+        '10': void
+      }> = {
+        '1': {
           run: () => {},
         },
-        2: {
+        '2': {
           run: () => {},
         },
-        3: {
+        '3': {
           run: () => {},
         },
-        4: {
+        '4': {
           run: () => {},
         },
-        5: {
+        '5': {
           run: () => {},
         },
-        7: {
+        '7': {
           run: () => {},
         },
-        6: {
+        '6': {
           needs: [
             '1',
             '2',
@@ -172,15 +203,15 @@ describe('core', () => {
           needsAnyOf: ['3', '4'],
           run: () => {},
         },
-        8: {
+        '8': {
           needsWorkflow: WorkflowStatus.Ok,
           run: () => {},
         },
-        9: {
+        '9': {
           needsWorkflow: WorkflowStatus.Fail,
           run: () => {},
         },
-        10: {
+        '10': {
           needsWorkflow: WorkflowStatus.Any,
           run: () => {},
         },
