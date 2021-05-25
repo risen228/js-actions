@@ -33,7 +33,7 @@ runPipeline<ExampleReturnTypes>({
   logOdd: {
     deps: ['even'],
     if: ({ even }) => !even,
-    run: () => console.log('Odd')
+    run: () => console.log('Odd'),
   }
 })
 ```
