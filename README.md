@@ -1,5 +1,9 @@
 # JS Actions
 
+```sh
+$ yarn add js-actions
+```
+
 ```javascript
 type ExampleReturnTypes = {
   first: number
