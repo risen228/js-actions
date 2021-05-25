@@ -1,8 +1,12 @@
 # JS Actions
 
+## Get started
+
 ```sh
 $ yarn add js-actions
 ```
+
+## Example
 
 ```javascript
 type ExampleReturnTypes = {
