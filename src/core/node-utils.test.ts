@@ -224,8 +224,9 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({ '6': ActionStatus.Ok }),
-            runSet: createSet([]),
+            statusMap: createMap({ '6': ActionStatus.Ok }),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -237,8 +238,9 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({}),
-            runSet: createSet(['6']),
+            statusMap: createMap({}),
+            runningSet: createSet(['6']),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -250,13 +252,14 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '5': ActionStatus.Ok,
               '3': ActionStatus.Ok,
               '4': ActionStatus.Ok,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -268,13 +271,14 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '2': ActionStatus.Ok,
               '3': ActionStatus.Ok,
               '4': ActionStatus.Ok,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -286,13 +290,14 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '5': ActionStatus.Skip,
               '3': ActionStatus.Ok,
               '4': ActionStatus.Ok,
             }),
-            runSet: createSet(['2']),
+            runningSet: createSet(['2']),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -304,13 +309,14 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '2': ActionStatus.Ok,
               '3': ActionStatus.Ok,
               '4': ActionStatus.Ok,
             }),
-            runSet: createSet(['5']),
+            runningSet: createSet(['5']),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -322,7 +328,7 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '2': ActionStatus.Ok,
               '5': ActionStatus.Fail,
@@ -330,7 +336,8 @@ describe('core', () => {
               '3': ActionStatus.Ok,
               '4': ActionStatus.Ok,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -342,7 +349,7 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '2': ActionStatus.Ok,
               '5': ActionStatus.Skip,
@@ -350,7 +357,8 @@ describe('core', () => {
               '3': ActionStatus.Ok,
               '4': ActionStatus.Ok,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -362,12 +370,34 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
+              '1': ActionStatus.Ok,
+              '2': ActionStatus.Ok,
+              '5': ActionStatus.Skip,
+              '7': ActionStatus.Fail,
+              '3': ActionStatus.Ok,
+              '4': ActionStatus.Ok,
+            }),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet(['6']),
+            workflowState: {
+              isFinished: false,
+              status: WorkflowStatus.Ok,
+            },
+          })
+        ).toBe(NodeStatus.Skipped)
+
+        expect(
+          getNodeStatus({
+            node: '6',
+            graph,
+            statusMap: createMap({
               '1': ActionStatus.Fail,
               '3': ActionStatus.Ok,
               '4': ActionStatus.Ok,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -379,12 +409,13 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '2': ActionStatus.Fail,
               '3': ActionStatus.Ok,
               '4': ActionStatus.Ok,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -396,12 +427,13 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '7': ActionStatus.Ok,
               '3': ActionStatus.Ok,
               '4': ActionStatus.Ok,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -413,12 +445,13 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '7': ActionStatus.Ok,
               '3': ActionStatus.Ok,
               '4': ActionStatus.Ok,
             }),
-            runSet: createSet(['1', '2']),
+            runningSet: createSet(['1', '2']),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -432,13 +465,14 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '2': ActionStatus.Ok,
               '5': ActionStatus.Ok,
               '7': ActionStatus.Fail,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -450,13 +484,14 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '2': ActionStatus.Ok,
               '5': ActionStatus.Ok,
               '7': ActionStatus.Fail,
             }),
-            runSet: createSet(['3']),
+            runningSet: createSet(['3']),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -468,13 +503,14 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '2': ActionStatus.Ok,
               '5': ActionStatus.Ok,
               '7': ActionStatus.Fail,
             }),
-            runSet: createSet(['4']),
+            runningSet: createSet(['4']),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -486,14 +522,15 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '2': ActionStatus.Ok,
               '5': ActionStatus.Ok,
               '7': ActionStatus.Fail,
               '3': ActionStatus.Fail,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -505,14 +542,15 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '2': ActionStatus.Ok,
               '5': ActionStatus.Ok,
               '7': ActionStatus.Fail,
               '3': ActionStatus.Ok,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -524,14 +562,15 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '2': ActionStatus.Ok,
               '5': ActionStatus.Ok,
               '7': ActionStatus.Fail,
               '4': ActionStatus.Ok,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -543,7 +582,7 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '2': ActionStatus.Ok,
               '5': ActionStatus.Ok,
@@ -551,7 +590,8 @@ describe('core', () => {
               '3': ActionStatus.Fail,
               '4': ActionStatus.Ok,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -563,7 +603,7 @@ describe('core', () => {
           getNodeStatus({
             node: '6',
             graph,
-            resultMap: createMap({
+            statusMap: createMap({
               '1': ActionStatus.Ok,
               '2': ActionStatus.Ok,
               '5': ActionStatus.Ok,
@@ -571,7 +611,8 @@ describe('core', () => {
               '3': ActionStatus.Fail,
               '4': ActionStatus.Fail,
             }),
-            runSet: createSet([]),
+            runningSet: createSet([]),
+            conditionsNotMetSet: createSet([]),
             workflowState: {
               isFinished: false,
               status: WorkflowStatus.Ok,
@@ -584,8 +625,9 @@ describe('core', () => {
         const config = (node: ActionName, workflowState: WorkflowState) => ({
           node,
           graph,
-          resultMap: createMap({}),
-          runSet: createSet([]),
+          statusMap: createMap({}),
+          runningSet: createSet([]),
+          conditionsNotMetSet: createSet([]),
           workflowState,
         })
 

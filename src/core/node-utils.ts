@@ -31,14 +31,16 @@ export function getNextNodes<TActionName extends ActionName>(
 export function getNodeStatus<TActionName extends ActionName>({
   node,
   graph,
-  resultMap,
-  runSet,
+  statusMap,
+  runningSet,
+  conditionsNotMetSet,
   workflowState,
 }: {
   node: TActionName
   graph: DependencyGraph<TActionName>
-  resultMap: Map<TActionName, ActionStatus>
-  runSet: Set<TActionName>
+  statusMap: Map<TActionName, ActionStatus>
+  runningSet: Set<TActionName>
+  conditionsNotMetSet: Set<TActionName>
   workflowState: WorkflowState
 }): NodeStatus {
   const allStats = {
@@ -56,12 +58,16 @@ export function getNodeStatus<TActionName extends ActionName>({
     },
   }
 
-  if (runSet.has(node)) {
+  if (runningSet.has(node)) {
     return NodeStatus.Running
   }
 
-  if (resultMap.has(node)) {
+  if (statusMap.has(node)) {
     return NodeStatus.Finished
+  }
+
+  if (conditionsNotMetSet.has(node)) {
+    return NodeStatus.Skipped
   }
 
   if (graph.nodesDependsOnWorkflow.has(node)) {
@@ -89,8 +95,8 @@ export function getNodeStatus<TActionName extends ActionName>({
   for (const edge of edgesIn) {
     const { from, meta } = edge
 
-    const isRunning = runSet.has(from)
-    const status = resultMap.get(from)
+    const isRunning = runningSet.has(from)
+    const status = statusMap.get(from)
     const isFinished = Boolean(status)
     const shouldNotCheckStatus = meta.status === ActionStatus.Any
 

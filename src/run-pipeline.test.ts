@@ -11,6 +11,22 @@ function fn<TActionName extends ActionName>(
   return (_, { setStatus }) => {
     callSequence.push(actionName)
     if (status) setStatus(status)
+    return actionName
+  }
+}
+
+function fnDeps<TActionName extends ActionName>(
+  actionName: TActionName,
+  deps: TActionName[],
+  status?: ActionStatus | WorkflowStatus
+): ActionRunner<Record<TActionName, unknown>, TActionName> {
+  return (providedDeps, { setStatus }) => {
+    for (const dep of deps) {
+      expect(providedDeps).toHaveProperty(String(dep))
+    }
+    callSequence.push(actionName)
+    if (status) setStatus(status)
+    return actionName
   }
 }
 
@@ -22,8 +38,8 @@ function asyncFn<TActionName extends ActionName>(
   return (_, { setStatus }) => {
     callSequence.push(actionName)
     if (status) setStatus(status)
-    return new Promise<void>((resolve) => {
-      setTimeout(resolve, ms)
+    return new Promise<TActionName>((resolve) => {
+      setTimeout(() => resolve(actionName), ms)
     })
   }
 }
@@ -61,6 +77,40 @@ beforeEach(() => {
 })
 
 describe('run', () => {
+  test('deps', async () => {
+    await runPipeline({
+      4: {
+        deps: ['3'],
+        run: fnDeps(4, [3]),
+      },
+      1: {
+        run: fn(1),
+      },
+      2: {
+        run: fn(2),
+      },
+      3: {
+        deps: ['1'],
+        run: fnDeps(3, [1]),
+      },
+      5: {
+        deps: ['1', '2'],
+        run: fnDeps(5, [1, 2]),
+      },
+      6: {
+        deps: ['4', '5'],
+        run: fnDeps(6, [4, 5]),
+      },
+    })
+
+    order(1, 3)
+    order(1, 5)
+    order(2, 5)
+    order(3, 4)
+    order(4, 6)
+    order(5, 6)
+  })
+
   test('needs', async () => {
     await runPipeline({
       4: {
@@ -439,5 +489,55 @@ describe('run', () => {
     expect(callSequence).toContain(13)
     order(13, 10)
     expect(callSequence).not.toContain(14)
+  })
+
+  test('if', async () => {
+    await runPipeline({
+      1: {
+        if: () => true,
+        run: fn(1),
+      },
+      2: {
+        run: asyncFn(2, 50),
+      },
+      3: {
+        deps: ['1'],
+        if: (deps) => deps['1'] === Symbol(),
+        run: fn(3),
+      },
+      4: {
+        deps: ['2'],
+        if: (deps) => deps['2'] === Symbol(),
+        run: asyncFn(4, 50),
+      },
+      5: {
+        deps: ['2'],
+        if: (deps) => deps['2'] === Symbol(),
+        run: fn(5),
+      },
+      6: {
+        deps: ['1'],
+        if: (deps) => deps['1'] === Symbol(),
+        run: asyncFn(6, 50),
+      },
+      7: {
+        deps: ['6'],
+        run: fn(7),
+      },
+      8: {
+        deps: ['1'],
+        if: () => true,
+        run: fn(8),
+      },
+    })
+
+    expect(callSequence).toContain(1)
+    expect(callSequence).toContain(2)
+    expect(callSequence).toContain(8)
+    expect(callSequence).not.toContain(3)
+    expect(callSequence).not.toContain(4)
+    expect(callSequence).not.toContain(5)
+    expect(callSequence).not.toContain(6)
+    expect(callSequence).not.toContain(7)
   })
 })

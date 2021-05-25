@@ -1,16 +1,23 @@
 export interface Defer<T> {
-  promise: Promise<T>
-  resolve: (value: T) => void
-  reject: (error: Error) => void
+  readonly promise: Promise<T>
+  readonly resolve: (value: T) => void
+  readonly reject: (error: Error) => void
 }
 
 export function createDefer<T extends unknown = void>(): Defer<T> {
-  const defer: Partial<Defer<T>> = {}
+  let resolveFn: Defer<T>['resolve']
+  let rejectFn: Defer<T>['reject']
 
-  defer.promise = new Promise((resolve, reject) => {
-    defer.resolve = resolve
-    defer.reject = reject
-  })
-
-  return defer as Defer<T>
+  return {
+    promise: new Promise((resolve, reject) => {
+      resolveFn = resolve
+      rejectFn = reject
+    }),
+    get resolve() {
+      return resolveFn
+    },
+    get reject() {
+      return rejectFn
+    },
+  }
 }

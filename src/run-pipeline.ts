@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
-import { Actions, ReturnTypes, WorkflowState } from './types'
+import { Actions, ProvidedDeps, ReturnTypes, WorkflowState } from './types'
 import { Logs } from './util/errors'
 import {
   ActionStatus,
@@ -89,20 +89,53 @@ type ResolvedDeps<TReturnTypes extends ReturnTypes> = {
   [ActionName in keyof TReturnTypes]: TReturnTypes[ActionName]
 }
 
-function createResolvedDeps<TReturnTypes extends ReturnTypes>(
-  actions: Actions<TReturnTypes>
-): ResolvedDeps<TReturnTypes> {
-  type Result = ResolvedDeps<TReturnTypes>
+// interface ResolvedDepsController<
+//   TReturnTypes extends ReturnTypes,
+//   TActionName extends keyof TReturnTypes = keyof TReturnTypes
+// > {
+//   check: <TDeps extends Array<TActionName>>(deps: TDeps) => deps
+//   getMultiple: <TDeps extends Array<TActionName>>(
+//     deps: TDeps
+//   ) => ProvidedDeps<TReturnTypes, TDeps>
+//   getOne: <T extends TActionName>(name: T) => TReturnTypes[T]
+//   setOne: <T extends TActionName>(name: T, value: TReturnTypes[T]) => void
+// }
 
-  const resolvedDeps: Partial<Result> = {}
+function createResolvedDepsController<TReturnTypes extends ReturnTypes>() {
+  type FullResolvedDeps = ResolvedDeps<TReturnTypes>
+  type PartialResolvedDeps = Partial<FullResolvedDeps>
 
-  for (const actionName in actions) {
-    type ActionResult = TReturnTypes[typeof actionName]
-    // is safe because ResolvedDeps cannot be used before resolving
-    resolvedDeps[actionName] = null as ActionResult
+  const resolvedDeps: PartialResolvedDeps = {}
+
+  const getMultiple = <TDeps extends Array<keyof TReturnTypes>>(
+    deps: TDeps
+  ): ProvidedDeps<TReturnTypes, TDeps> => {
+    const temp: Partial<ProvidedDeps<TReturnTypes, TDeps>> = {}
+
+    for (const dep of deps) {
+      const hasResolved = dep in resolvedDeps
+
+      if (!hasResolved) {
+        throw new Error(`Dependency ${dep} has not resolved yet`)
+      }
+
+      temp[dep] = resolvedDeps[dep]
+    }
+
+    return temp as ProvidedDeps<TReturnTypes, TDeps>
   }
 
-  return resolvedDeps as Result
+  const setOne = <TDep extends keyof TReturnTypes>(
+    dep: TDep,
+    value: TReturnTypes[TDep]
+  ) => {
+    resolvedDeps[dep] = value
+  }
+
+  return {
+    getMultiple,
+    setOne,
+  }
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -112,13 +145,14 @@ export async function runPipeline<TReturnTypes extends ReturnTypes>(
   type ActionName = keyof TReturnTypes
 
   const dependencyGraph = buildDependencyGraph(actions)
-  const resolvedDeps = createResolvedDeps(actions)
+  const resolvedDepsController = createResolvedDepsController<TReturnTypes>()
 
   let queueDefer = createDefer()
   const actionQueue: ActionName[] = []
 
   const statusMap: Map<ActionName, ActionStatus> = new Map()
   const runningSet: Set<ActionName> = new Set()
+  const conditionsNotMetSet: Set<ActionName> = new Set()
 
   const workflowState: WorkflowState = {
     isFinished: false,
@@ -156,8 +190,9 @@ export async function runPipeline<TReturnTypes extends ReturnTypes>(
     const nodeStatus = getNodeStatus({
       node: actionName,
       graph: dependencyGraph,
-      resultMap: statusMap,
-      runSet: runningSet,
+      statusMap,
+      runningSet,
+      conditionsNotMetSet,
       workflowState,
     })
 
@@ -170,47 +205,65 @@ export async function runPipeline<TReturnTypes extends ReturnTypes>(
       return
     }
 
-    const action = actions[actionName]
-
     const temporaryStatus = createTemporaryStatus()
+
+    const applyStatusAndContinue = () => {
+      const statuses = temporaryStatus.extract()
+      statusMap.set(actionName, statuses.action)
+
+      if (statuses.workflow) {
+        finishWorkflow(statuses.workflow)
+      }
+
+      const nextActions = getNextNodes(actionName, dependencyGraph)
+
+      for (const nextAction of nextActions) {
+        actionQueue.push(nextAction)
+      }
+    }
 
     if (nodeStatus === NodeStatus.Skipped) {
       temporaryStatus.set(ActionStatus.Skip)
+      applyStatusAndContinue()
+      return
     }
 
-    if (nodeStatus === NodeStatus.Ready) {
-      // we should do it before any async code
-      runningSet.add(actionName)
+    /*
+     * Node is ready
+     */
 
-      const actionActions = {
-        setStatus: temporaryStatus.set,
-      }
+    const {
+      if: checkConditions = () => true,
+      deps = [],
+      run,
+    } = actions[actionName]
 
-      try {
-        const result = await Promise.resolve().then(() => {
-          return action.run(resolvedDeps, actionActions)
-        })
+    const resolvedDeps = resolvedDepsController.getMultiple(deps)
 
-        resolvedDeps[actionName] = result
-      } catch (error) {
-        resolvedDeps[actionName] = error
-      }
+    const conditionsMet = checkConditions(resolvedDeps)
 
-      runningSet.delete(actionName)
+    if (!conditionsMet) {
+      conditionsNotMetSet.add(actionName)
+      temporaryStatus.set(ActionStatus.Skip)
+      applyStatusAndContinue()
+      return
     }
 
-    const statuses = temporaryStatus.extract()
-    statusMap.set(actionName, statuses.action)
+    // we should do it before any async code
+    runningSet.add(actionName)
 
-    if (statuses.workflow) {
-      finishWorkflow(statuses.workflow)
+    const actionActions = {
+      setStatus: temporaryStatus.set,
     }
 
-    const nextActions = getNextNodes(actionName, dependencyGraph)
+    try {
+      const result = await run(resolvedDeps, actionActions)
+      resolvedDepsController.setOne(actionName, result)
+    } catch {}
 
-    for (const nextAction of nextActions) {
-      actionQueue.push(nextAction)
-    }
+    runningSet.delete(actionName)
+
+    applyStatusAndContinue()
   }
 
   const independentActions = getIndependentNodes(dependencyGraph)
