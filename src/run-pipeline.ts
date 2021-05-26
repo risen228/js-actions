@@ -89,18 +89,6 @@ type ResolvedDeps<TReturnTypes extends ReturnTypes> = {
   [ActionName in keyof TReturnTypes]: TReturnTypes[ActionName]
 }
 
-// interface ResolvedDepsController<
-//   TReturnTypes extends ReturnTypes,
-//   TActionName extends keyof TReturnTypes = keyof TReturnTypes
-// > {
-//   check: <TDeps extends Array<TActionName>>(deps: TDeps) => deps
-//   getMultiple: <TDeps extends Array<TActionName>>(
-//     deps: TDeps
-//   ) => ProvidedDeps<TReturnTypes, TDeps>
-//   getOne: <T extends TActionName>(name: T) => TReturnTypes[T]
-//   setOne: <T extends TActionName>(name: T, value: TReturnTypes[T]) => void
-// }
-
 function createResolvedDepsController<TReturnTypes extends ReturnTypes>() {
   type FullResolvedDeps = ResolvedDeps<TReturnTypes>
   type PartialResolvedDeps = Partial<FullResolvedDeps>
@@ -240,7 +228,7 @@ export async function runPipeline<TReturnTypes extends ReturnTypes>(
 
     const resolvedDeps = resolvedDepsController.getMultiple(deps)
 
-    const conditionsMet = checkConditions(resolvedDeps)
+    const conditionsMet = await checkConditions(resolvedDeps)
 
     if (!conditionsMet) {
       conditionsNotMetSet.add(actionName)

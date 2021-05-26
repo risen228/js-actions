@@ -45,7 +45,9 @@ export interface Action<
   needs?: Dependency<TOtherActionName>[]
   needsAnyOf?: Dependency<TOtherActionName>[]
   needsWorkflow?: WorkflowStatus
-  if?: (input: Readonly<ProvidedDeps<TReturnTypes, TDeps>>) => boolean
+  if?: (
+    input: Readonly<ProvidedDeps<TReturnTypes, TDeps>>
+  ) => boolean | Promise<boolean>
   run: ActionRunner<TReturnTypes, TActionName, TDeps>
 }
 
